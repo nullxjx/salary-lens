@@ -1,4 +1,5 @@
 import {DEFAULTS,calculate,series} from './calc.js';
+import {CITIES,cityConfig} from './cities.js';
 const $=id=>document.getElementById(id);
 const wan=n=>(n/10000).toFixed(2), pct=n=>(n*100).toFixed(2), yuan=n=>n.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});
 let config={...DEFAULTS}, selected=10, mode='income', rows=series(config);
@@ -6,18 +7,36 @@ const colors={cash:'#173f37',total:'#ca703d',tax:'#55788a',muted:'#65716b',grid:
 const el=(tag,attrs={},children='')=>`<${tag} ${Object.entries(attrs).map(([k,v])=>`${k}="${v}"`).join(' ')}>${children}</${tag}>`;
 const txt=(x,y,text,attrs={})=>el('text',{x,y,fill:colors.muted,'font-size':11,...attrs},text);
 const line=(x1,y1,x2,y2,attrs={})=>el('line',{x1,y1,x2,y2,stroke:colors.grid,'stroke-width':1,...attrs});
-const formIds=['fund-rate','deduction','social-cap','fund-cap'];
+const insurance=[['pension','养老'],['medical','医疗'],['unemployment','失业']];
+$('insurance-fields').innerHTML=insurance.map(([key,name])=>`<div class="field"><label for="${key}-cap">${name}基数上限 <span>元 / 月</span></label><input id="${key}-cap" type="number" min="1000" max="100000" step="1"></div><div class="field"><label for="${key}-rate">${name}个人比例 <span>%</span></label><input id="${key}-rate" type="number" min="0" max="20" step="0.01"></div>`).join('');
+const formMap={'fund-rate':'fundRate','supplement-rate':'supplementRate',deduction:'deduction','fund-cap':'fundCap','medical-fixed':'medicalFixed',...Object.fromEntries(insurance.flatMap(([k])=>[[k+'-cap',k+'Cap'],[k+'-rate',k+'Rate']]))};
+const formIds=Object.keys(formMap);
+function populate(){
+ const sh=config.city==='shanghai';
+ $('city').value=config.city;
+ $('fund-rate').innerHTML=Array.from({length:sh?3:8},(_,i)=>(sh?7:12)-i).map(n=>`<option value="${n}">${n}%</option>`).join('');
+ $('fund-rate-label').textContent=sh?'基础公积金比例':'公积金缴存比例';
+ $('supplement-field').hidden=!sh;$('medical-tier-field').hidden=config.city!=='shenzhen';
+ for(const [id,key] of Object.entries(formMap)){$(id).value=config[key];$(id).removeAttribute('aria-invalid');}
+ $('medical-tier').value=String(config.medicalRate);
+ $('error').hidden=true;$('download').disabled=false;
+}
 function readConfig(){
- const values=formIds.map(id=>{const f=$(id), valid=f.value!==''&&f.checkValidity();f.setAttribute('aria-invalid',String(!valid));return valid?Number(f.value):NaN;});
- const c={fundRate:values[0],deduction:values[1],socialCap:values[2],fundCap:values[3]};
+ const c={...config};
+ for(const [id,key] of Object.entries(formMap)){const f=$(id),valid=f.value!==''&&f.checkValidity();f.setAttribute('aria-invalid',String(!valid));c[key]=valid?Number(f.value):NaN;}
  try{calculate(selected*10000,c);$('error').hidden=true;$('download').disabled=false;return c;}
  catch(e){$('error').hidden=false;$('error').textContent=`${e.message}。结果保留上一组有效参数。`;$('download').disabled=true;return null;}
 }
 function choose(n){selected=n;$('salary').value=n;render();}
 function render(){
  const r=rows[selected-4];
+ const city=CITIES[config.city];
+ $('city-note').textContent=city.note;
+ $('city-source-title').textContent=`${city.name} · 参数来源`;
+ $('city-sources').innerHTML=city.sources.map(s=>`<li><a href="${s.url}" target="_blank" rel="noopener noreferrer">${s.title} ↗</a></li>`).join('');
+ $('social-detail-content').innerHTML=`<p><b>${city.name} · 每月个人缴费</b><br>${r.socialItems.map((a,i)=>`${insurance[i][1]}：${yuan(a.base)} × ${a.rate}% = ${yuan(a.amount)} 元`).join('<br>')}<br>医疗固定额：${yuan(r.medicalFixed)} 元<br>个人社保合计：${yuan(r.socialMonthly)} 元 / 月<br>单边公积金：${yuan(r.fundBase)} × ${config.fundRate}%（按元取整）${config.city==='shanghai'?` + ${yuan(r.fundBase)} × ${config.supplementRate}%（另行按元取整）`:''} = ${yuan(r.fundMonthly)} 元 / 月</p>`;
  $('salary-value').value=selected;$('salary').setAttribute('aria-valuetext',`${selected} 万元每月`);
- $('result-label').textContent=`月薪 ${selected} 万的年度收入`;
+ $('result-label').textContent=`${CITIES[config.city].name} · 月薪 ${selected} 万的年度收入`;
  $('cash').textContent=wan(r.cash);$('total').textContent=wan(r.total);$('burden').textContent=pct(r.burdenRate);
  $('cash-note').textContent=`含税后年终奖 ${wan(r.bonus-r.bonusTax.tax)} 万`;
  $('fund-note').textContent=`双边公积金 ${wan(r.personalFund+r.employerFund)} 万 / 年`;
@@ -86,14 +105,18 @@ function drawChart(){
 }
 $('salary').addEventListener('input',()=>choose(Number($('salary').value)));
 for(const id of formIds) $(id).addEventListener('input',()=>{const c=readConfig();if(c){config=c;rows=series(config);render();}});
-$('reset').addEventListener('click',()=>{config={...DEFAULTS};selected=10;mode='income';$('salary').value=10;$('fund-rate').value=12;$('deduction').value=0;$('social-cap').value=25611;$('fund-cap').value=42151;for(const id of formIds)$(id).removeAttribute('aria-invalid');$('error').hidden=true;$('download').disabled=false;rows=series(config);document.querySelectorAll('[data-chart]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.chart===mode)));render();});
+$('city').addEventListener('change',()=>{config={...cityConfig($('city').value),deduction:config.deduction};populate();rows=series(config);render();});
+$('medical-tier').addEventListener('change',()=>{$('medical-rate').value=$('medical-tier').value;const c=readConfig();if(c){config=c;rows=series(config);render();}});
+$('medical-rate').addEventListener('input',()=>{$('medical-tier').value=$('medical-rate').value;});
+$('reset').addEventListener('click',()=>{config=cityConfig(config.city);selected=10;mode='income';$('salary').value=10;populate();rows=series(config);document.querySelectorAll('[data-chart]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.chart===mode)));render();});
 document.querySelectorAll('[data-chart]').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.chart;document.querySelectorAll('[data-chart]').forEach(t=>t.setAttribute('aria-pressed',String(t===b)));drawChart();}));
 $('table-body').addEventListener('click',e=>{const tr=e.target.closest('tr[data-month]');if(tr){const fromButton=!!e.target.closest('button');const n=Number(tr.dataset.month);choose(n);if(fromButton)$('table-body').querySelector(`tr[data-month="${n}"] button`).focus({preventScroll:true});}});
 $('chart').addEventListener('click',e=>{const mark=e.target.closest('[data-month]');if(mark)choose(Number(mark.dataset.month));});
 $('download').addEventListener('click',()=>{
- const data=[['杭州 16 薪测算；金额单位：人民币元；参数快照日期：2026-11-11'],['社保基数上限',config.socialCap,'公积金基数上限',config.fundCap,'双边各缴比例',config.fundRate+'%','月专项附加扣除',config.deduction],['税前月薪','税前年薪','现金到手','含双边公积金','全年工资个税','全年奖金个税','全年个人社保','全年个人公积金','全年单位公积金','个税比例','综合负担率','较上一档现金增量'],...rows.map(r=>[r.monthly,r.gross,r.cash,r.total,r.wageTax.tax,r.bonusTax.tax,r.social,r.personalFund,r.employerFund,pct(r.incomeTaxRate)+'%',pct(r.burdenRate)+'%',r.increase??''])];
+ const data=[[`${CITIES[config.city].name} 16 薪测算；金额单位：人民币元；参数快照日期：2026-11-11`],['说明',CITIES[config.city].note],...insurance.map(([k,n])=>[n+'上限',config[k+'Cap'],'个人比例',config[k+'Rate']+'%']),['医疗固定额',config.medicalFixed,'公积金基数上限',config.fundCap,'双边各基础比例',config.fundRate+'%','双边各补充比例',config.supplementRate+'%','月专项附加扣除',config.deduction],['税前月薪','税前年薪','现金到手','含双边公积金','全年工资个税','全年奖金个税','全年个人社保','全年个人公积金','全年单位公积金','个税比例','综合负担率','较上一档现金增量'],...rows.map(r=>[r.monthly,r.gross,r.cash,r.total,r.wageTax.tax,r.bonusTax.tax,r.social,r.personalFund,r.employerFund,pct(r.incomeTaxRate)+'%',pct(r.burdenRate)+'%',r.increase??''])];
  const csv='\uFEFF'+data.map(row=>row.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');
- const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));const a=document.createElement('a');a.href=url;a.download='杭州16薪税后收入测算.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));const a=document.createElement('a');a.href=url;a.download=`${CITIES[config.city].name}16薪税后收入测算.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
+populate();
 new ResizeObserver(()=>drawChart()).observe($('chart'));
 render();
