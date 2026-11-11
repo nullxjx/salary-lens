@@ -23,8 +23,18 @@ test('深圳二档正确减少医保，不修改养老和失业',()=>{
  const c=cityConfig('shenzhen'),a=calculate(100000,c),b=calculate(100000,{...c,medicalRate:.5});
  assert.equal(b.socialItems[1].amount,168.17);assert.equal(a.socialItems[0].amount,b.socialItems[0].amount);assert.ok(b.cash>a.cash);
 });
-test('城市配置独立，85 档均有限值，非法城市/费率拒绝',()=>{
+test('城市配置独立，95 档均有限值，非法城市/费率拒绝',()=>{
  const c=cityConfig('beijing');c.fundCap=1000;assert.equal(cityConfig('beijing').fundCap,36348);
- for(const id of Object.keys(CITIES)){const rows=series(cityConfig(id));assert.equal(rows.length,17);assert.ok(rows.every(r=>Number.isFinite(r.cash)));}
+ for(const id of Object.keys(CITIES)){const rows=series(cityConfig(id));assert.equal(rows.length,19);assert.ok(rows.every(r=>Number.isFinite(r.cash)));}
  assert.throws(()=>cityConfig('unknown'));assert.throws(()=>calculate(100000,{medicalRate:NaN}));
+});
+
+test('2 万起点按实际缴费工资计算，未封顶公积金影响增量',()=>{
+ const c=cityConfig('shanghai'),a=calculate(20000,c);
+ for(const item of a.socialItems)assert.equal(item.base,20000*16/12);
+ assert.equal(a.fundBase,20000*16/12);
+ const rows=series(cityConfig('hangzhou'));
+ assert.equal(rows[0].monthly,20000);assert.equal(rows[0].increase,null);
+ assert.equal(rows[1].monthly,30000);assert.ok(Math.abs((rows[1].total-rows[0].total)-rows[1].increase)>1000);
+ assert.equal(rows.at(-1).monthly,200000);
 });

@@ -11,7 +11,7 @@ def tax(x,bonus=False):
   if x<=lim:return rd(x*D(rate)-D(quick)/(12 if bonus else 1))
 rows=[]
 for city,(caps,fund,rates,fixed,unemp) in cfg.items():
- for m in range(40000,200001,10000):
+ for m in range(20000,200001,10000):
   avg=D(m)*16/12
   social=sum(rd(min(avg,D(cap))*D(rate)/100) for cap,rate in zip(caps,['8','2',unemp]))+fixed
   pf=sum(rd(min(avg,D(fund))*D(rate)/100,'1') for rate in rates)*12

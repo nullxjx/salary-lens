@@ -1,5 +1,5 @@
-import {DEFAULTS,calculate,series} from './calc.js';
-import {CITIES,cityConfig} from './cities.js';
+import {DEFAULTS,calculate,series} from './calc.js?v=20261111-2';
+import {CITIES,cityConfig} from './cities.js?v=20261111-2';
 const $=id=>document.getElementById(id);
 const wan=n=>(n/10000).toFixed(2), pct=n=>(n*100).toFixed(2), yuan=n=>n.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});
 let config={...DEFAULTS}, selected=10, mode='income', rows=series(config);
@@ -29,7 +29,7 @@ function readConfig(){
 }
 function choose(n){selected=n;$('salary').value=n;render();}
 function render(){
- const r=rows[selected-4];
+ const r=rows[selected-2];
  const city=CITIES[config.city];
  $('city-note').textContent=city.note;
  $('city-source-title').textContent=`${city.name} · 参数来源`;
@@ -53,7 +53,7 @@ function render(){
 function drawChart(){
  const container=$('chart'),w=Math.max(240,container.clientWidth),h=w<420?270:300;
  const left=47,right=17,top=23,bottom=40,pw=w-left-right,ph=h-top-bottom;
- const x=n=>left+(n-4)/16*pw;
+ const x=n=>left+(n-2)/18*pw;
  let minimum=0,maximum=1,step=1;
  if(mode==='income'){maximum=Math.ceil(Math.max(...rows.map(r=>r.total))/10000/40)*40;step=40;}
  if(mode==='burden'){minimum=Math.floor(Math.min(0,...rows.map(r=>r.burdenRate*100))/10)*10;maximum=Math.ceil(Math.max(...rows.map(r=>r.incomeTaxRate*100),...rows.map(r=>r.burdenRate*100))/10)*10;step=10;}
@@ -61,16 +61,16 @@ function drawChart(){
  const y=v=>top+(maximum-v)/(maximum-minimum)*ph;
  let content='';
  for(let v=minimum;v<=maximum;v+=step){content+=line(left,y(v),w-right,y(v));content+=txt(left-10,y(v)+4,mode==='burden'?`${v}%`:v,{'text-anchor':'end'});}
- const ticks=w<420?[4,8,12,16,20]:w<600?[4,6,8,10,12,14,16,18,20]:rows.map(r=>r.monthly/10000);
+ const ticks=w<420?[2,6,10,14,18,20]:w<600?[2,4,6,8,10,12,14,16,18,20]:rows.map(r=>r.monthly/10000);
  for(const n of ticks) content+=txt(x(n),h-19,n,{'text-anchor':'middle'});
  content+=txt(w-right,h-1,'税前月薪 · 万元 / 月',{'text-anchor':'end','font-size':10});
  content+=txt(left,12,mode==='income'?'年收入 · 万元':mode==='burden'?'占税前 16 薪比例':'现金年增量 · 万元',{'font-size':10});
  content+=line(x(selected),top,x(selected),h-bottom,{stroke:'#9eaea4','stroke-dasharray':'3 4'});
  let description,legend,note;
- const r=rows[selected-4];
+ const r=rows[selected-2];
  if(mode==='income'||mode==='burden'){
-  const ms=new Set(Array.from({length:321},(_,i)=>40000+i*500));
-  for(const t of [75000,105000,165000]){ms.add(t);ms.add(t+.01);}
+  const ms=new Set(Array.from({length:361},(_,i)=>20000+i*500));
+  for(const t of [36000,75000,105000,165000]){ms.add(t);ms.add(t+.01);}
   const dense=[...ms].sort((a,b)=>a-b).map(m=>calculate(m,config));
   const plots=mode==='income'?[['cash',colors.cash,'现金到手'],['total',colors.total,'含双边公积金']]:[['incomeTaxRate',colors.tax,'仅个税比例'],['burdenRate',colors.cash,'综合税率']];
   for(const [key,color,label] of plots){
@@ -81,7 +81,7 @@ function drawChart(){
   }
   legend=plots.map(([,c,l])=>`<span><i style="background:${c}"></i>${l}</span>`).join('');
   if(mode==='income'){
-   description='税前月薪 4–20 万，每档增加 1 万。曲线保留年终奖换档时的真实跳变。';
+   description='税前月薪 2–20 万，每档增加 1 万。曲线保留年终奖换档时的真实跳变。';
    note=`月薪 ${selected} 万：现金 ${wan(r.cash)} 万，含公积金 ${wan(r.total)} 万。公积金是账户积累，不等同于随时可支取的现金。`;
   }else{
    description='个税比例只计个税；综合税率同时计入个人社保，并用单位公积金抵减。两者分母都只含税前 16 薪。';
@@ -89,7 +89,7 @@ function drawChart(){
   }
  }else{
   content+=line(left,y(16),w-right,y(16),{stroke:'#9eaea4','stroke-dasharray':'4 4'});
-  const barw=Math.min(26,pw/18);
+  const barw=Math.min(26,pw/20);
   for(const a of rows.slice(1)){
    const n=a.monthly/10000,v=a.increase/10000,color=a.crossBonus?colors.total:colors.cash;
    content+=el('rect',{x:x(n)-barw/2,y:Math.min(y(v),y(0)),width:barw,height:Math.abs(y(0)-y(v)),fill:color,opacity:n===selected?1:.8,rx:2,'data-month':n},el('title',{},`${n-1} → ${n} 万：年现金增加 ${wan(a.increase)} 万元${a.crossBonus?'，跨年终奖税档':''}`));
@@ -97,7 +97,7 @@ function drawChart(){
   }
   legend=`<span><i style="background:${colors.cash}"></i>税后现金增量</span><span><i style="background:${colors.total}"></i>跨年终奖税率档</span>`;
   description='横坐标表示涨薪后的月薪：例如 10 对应从 9 万涨到 10 万。虚线为每次新增税前年薪 16 万。';
-  note=r.increase===null?'4 万是起始档，没有上一档；选择 5 万及以上可查看涨薪收益。':`从 ${selected-1} 万涨到 ${selected} 万：税前年收入增加 16 万，现金实际多拿 ${wan(r.increase)} 万（${yuan(r.increase)} 元）。${r.crossBonus?'这一档跨越年终奖税率分界，增量暂时变小。':''}`;
+  note=r.increase===null?'2 万是起始档，没有上一档；选择 3 万及以上可查看涨薪收益。':`从 ${selected-1} 万涨到 ${selected} 万：税前年收入增加 16 万，现金实际多拿 ${wan(r.increase)} 万（${yuan(r.increase)} 元）。${r.crossBonus?'这一档跨越年终奖税率分界，增量暂时变小。':''}`;
  }
  $('chart-description').textContent=description;$('legend').innerHTML=legend;$('chart-note').textContent=note;
  container.setAttribute('aria-label',`${description} ${note} 完整数值见下方明细表。`);

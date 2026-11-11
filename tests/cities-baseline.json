@@ -1,6 +1,26 @@
 [
   {
     "city": "beijing",
+    "monthly": 20000,
+    "social": 33635.88,
+    "personalFund": 38400.0,
+    "wageTax": 8276.41,
+    "bonusTax": 7790.0,
+    "cash": 231897.71,
+    "total": 308697.71
+  },
+  {
+    "city": "beijing",
+    "monthly": 30000,
+    "social": 45834.48,
+    "personalFund": 52344.0,
+    "wageTax": 23444.3,
+    "bonusTax": 11790.0,
+    "cash": 346587.22,
+    "total": 451275.22
+  },
+  {
+    "city": "beijing",
     "monthly": 40000,
     "social": 45834.48,
     "personalFund": 52344.0,
@@ -168,6 +188,26 @@
     "bonusTax": 272840.0,
     "cash": 2002081.84,
     "total": 2106769.84
+  },
+  {
+    "city": "shanghai",
+    "monthly": 20000,
+    "social": 33599.88,
+    "personalFund": 38400.0,
+    "wageTax": 8280.01,
+    "bonusTax": 7790.0,
+    "cash": 231930.11,
+    "total": 308730.11
+  },
+  {
+    "city": "shanghai",
+    "monthly": 30000,
+    "social": 47541.12,
+    "personalFund": 54336.0,
+    "wageTax": 22704.58,
+    "bonusTax": 11790.0,
+    "cash": 343628.3,
+    "total": 452300.3
   },
   {
     "city": "shanghai",
@@ -341,6 +381,26 @@
   },
   {
     "city": "guangzhou",
+    "monthly": 20000,
+    "social": 32639.88,
+    "personalFund": 38400.0,
+    "wageTax": 8376.01,
+    "bonusTax": 7790.0,
+    "cash": 232794.11,
+    "total": 309594.11
+  },
+  {
+    "city": "guangzhou",
+    "monthly": 30000,
+    "social": 34939.68,
+    "personalFund": 57600.0,
+    "wageTax": 24572.06,
+    "bonusTax": 11790.0,
+    "cash": 351098.26,
+    "total": 466298.26
+  },
+  {
+    "city": "guangzhou",
     "monthly": 40000,
     "social": 35010.12,
     "personalFund": 60048.0,
@@ -511,6 +571,26 @@
   },
   {
     "city": "shenzhen",
+    "monthly": 20000,
+    "social": 32639.88,
+    "personalFund": 38400.0,
+    "wageTax": 8376.01,
+    "bonusTax": 7790.0,
+    "cash": 232794.11,
+    "total": 309594.11
+  },
+  {
+    "city": "shenzhen",
+    "monthly": 30000,
+    "social": 35530.8,
+    "personalFund": 57600.0,
+    "wageTax": 24453.84,
+    "bonusTax": 11790.0,
+    "cash": 350625.36,
+    "total": 465825.36
+  },
+  {
+    "city": "shenzhen",
     "monthly": 40000,
     "social": 35734.08,
     "personalFund": 69804.0,
@@ -678,6 +758,26 @@
     "bonusTax": 272840.0,
     "cash": 1998034.06,
     "total": 2137642.06
+  },
+  {
+    "city": "hangzhou",
+    "monthly": 20000,
+    "social": 32269.92,
+    "personalFund": 38400.0,
+    "wageTax": 8413.01,
+    "bonusTax": 7790.0,
+    "cash": 233127.07,
+    "total": 309927.07
+  },
+  {
+    "city": "hangzhou",
+    "monthly": 30000,
+    "social": 32269.92,
+    "personalFund": 57600.0,
+    "wageTax": 25106.02,
+    "bonusTax": 11790.0,
+    "cash": 353234.06,
+    "total": 468434.06
   },
   {
     "city": "hangzhou",
