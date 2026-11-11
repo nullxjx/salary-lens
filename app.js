@@ -1,5 +1,5 @@
-import {DEFAULTS,calculate,series,bonusBreakpoints} from './calc.js?v=20261111-3';
-import {CITIES,cityConfig} from './cities.js?v=20261111-3';
+import {DEFAULTS,calculate,series,bonusBreakpoints} from './calc.js?v=20261111-4';
+import {CITIES,cityConfig} from './cities.js?v=20261111-4';
 const $=id=>document.getElementById(id);
 const wan=n=>(n/10000).toFixed(2), pct=n=>(n*100).toFixed(2), yuan=n=>n.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});
 let config={...DEFAULTS}, selected=10, mode='income', rows=series(config);
@@ -15,7 +15,7 @@ function populate(){
  const sh=config.city==='shanghai';
  $('city').value=config.city;
  $('fund-rate').innerHTML=Array.from({length:sh?3:8},(_,i)=>(sh?7:12)-i).map(n=>`<option value="${n}">${n}%</option>`).join('');
- $('fund-rate-label').textContent=sh?'基础公积金比例':'公积金缴存比例';
+ $('fund-rate-label').textContent=sh?'基础公积金比例':'公积金比例';
  $('supplement-field').hidden=!sh;$('medical-tier-field').hidden=config.city!=='shenzhen';
  for(const [id,key] of Object.entries(formMap)){$(id).value=config[key];$(id).removeAttribute('aria-invalid');}
  $('medical-tier').value=String(config.medicalRate);
@@ -32,11 +32,15 @@ function render(){
  const r=rows[selected-2];
  const city=CITIES[config.city];
  const totalMonths=Number((config.wageMonths+config.bonusMonths).toFixed(1));
- $('pay-summary').textContent=`${config.wageMonths} 个月工资 + ${config.bonusMonths} 个月年终奖 · 共 ${totalMonths} 薪`;
- $('table-description').textContent=`月薪每增加 1 万元，税前年薪增加 ${totalMonths} 万元。点击一行查看该档结果；* 表示跨越年终奖税率档。`;
+ $('pay-summary').textContent=`工资 ${config.wageMonths} + 年终奖 ${config.bonusMonths}`;
+ $('table-description').textContent=`每档月薪 +1 万，税前年薪 +${totalMonths} 万；* 表示年终奖换档。`;
  $('floor-note').textContent=`当前预设基数下限（元/月）：养老 ${config.pensionFloor}、医保 ${config.medicalFloor}、失业 ${config.unemploymentFloor}、公积金 ${config.fundFloor}。`;
  $('city-note').textContent=city.note;
+ const extraChanged=['deduction','medicalFixed','pensionCap','medicalCap','unemploymentCap','fundCap','pensionRate','medicalRate','unemploymentRate'].some(key=>config[key]!==city.config[key]);
+ $('more-settings-hint').textContent=extraChanged?'已有自定义设置':'扣除 / 缴费参数';
  $('base-explanation').textContent=`${city.name} · 月薪 ${selected} 万 ×（工资 ${config.wageMonths} + 年终奖 ${config.bonusMonths}）÷ 12 = 折算月均 ${yuan(r.average)} 元。`;
+ const cappedCount=r.socialItems.filter(item=>r.average>=config[item.key+'Cap']).length;
+ $('contribution-status').textContent=`${cappedCount===3?'社保已封顶':cappedCount?'社保部分封顶':'社保未封顶'} · ${r.average>=config.fundCap?'公积金已封顶':'公积金未封顶'}`;
  const contributionItems=[...r.socialItems.map((item,i)=>({...item,name:insurance[i][1]})),{key:'fund',name:'公积金',base:r.fundBase}];
  $('base-cards').innerHTML=contributionItems.map(item=>{
   const cap=config[item.key+'Cap'],floor=config[item.key+'Floor'],capped=r.average>=cap;
@@ -48,10 +52,10 @@ function render(){
  $('city-sources').innerHTML=city.sources.map(s=>`<li><a href="${s.url}" target="_blank" rel="noopener noreferrer">${s.title} ↗</a></li>`).join('');
  $('social-detail-content').innerHTML=`<p><b>${city.name} · 每月个人缴费</b><br>${r.socialItems.map((a,i)=>`${insurance[i][1]}：${yuan(a.base)} × ${a.rate}% = ${yuan(a.amount)} 元`).join('<br>')}<br>医疗固定额：${yuan(r.medicalFixed)} 元<br>个人社保合计：${yuan(r.socialMonthly)} 元 / 月<br>单边公积金：${yuan(r.fundBase)} × ${config.fundRate}%（按元取整）${config.city==='shanghai'?` + ${yuan(r.fundBase)} × ${config.supplementRate}%（另行按元取整）`:''} = ${yuan(r.fundMonthly)} 元 / 月</p>`;
  $('salary-value').value=selected;$('salary').setAttribute('aria-valuetext',`${selected} 万元每月`);
- $('result-label').textContent=`${CITIES[config.city].name} · 月薪 ${selected} 万的年度收入`;
+ $('result-label').textContent=`${CITIES[config.city].name} · 月薪 ${selected} 万`;
  $('cash').textContent=wan(r.cash);$('total').textContent=wan(r.total);$('burden').textContent=pct(r.burdenRate);
  $('cash-note').textContent=`含税后年终奖 ${wan(r.bonus-r.bonusTax.tax)} 万`;
- $('fund-note').textContent=`双边公积金 ${wan(r.personalFund+r.employerFund)} 万 / 年`;
+ $('fund-note').textContent=`其中公积金 ${wan(r.personalFund+r.employerFund)} 万，非即时现金`;
  $('gross-label').textContent=`税前 ${totalMonths} 薪共 ${wan(r.gross)} 万`;
  const parts=[['现金到手',r.cash,colors.cash],['工资个税',r.wageTax.tax,colors.tax],['年终奖个税',r.bonusTax.tax,'#90a3aa'],['个人社保',r.social,colors.total],['个人公积金',r.personalFund,'#b8c99e']];
  $('money-bar').innerHTML=parts.map(([label,value,color])=>`<span style="width:${value/r.gross*100}%;background:${color}" title="${label}：${yuan(value)} 元"></span>`).join('');
@@ -63,7 +67,7 @@ function render(){
  drawChart();
 }
 function drawChart(){
- const container=$('chart'),w=Math.max(240,container.clientWidth),h=w<420?270:300;
+ const container=$('chart'),w=Math.max(240,container.clientWidth),h=w<420?240:250;
  const left=47,right=17,top=23,bottom=40,pw=w-left-right,ph=h-top-bottom;
  const x=n=>left+(n-2)/18*pw;
  const totalMonths=Number((config.wageMonths+config.bonusMonths).toFixed(1));
@@ -94,11 +98,11 @@ function drawChart(){
   }
   legend=plots.map(([,c,l])=>`<span><i style="background:${c}"></i>${l}</span>`).join('');
   if(mode==='income'){
-   description='税前月薪 2–20 万，每档增加 1 万。曲线保留年终奖换档时的真实跳变。';
-   note=`月薪 ${selected} 万：现金 ${wan(r.cash)} 万，含公积金 ${wan(r.total)} 万。公积金是账户积累，不等同于随时可支取的现金。`;
+   description='月薪 2–20 万 · 点击图中节点切换档位';
+   note=config.bonusMonths>0?'年终奖换档可能带来短暂回落，并非计算异常。':'当前不发年终奖，全部工资按综合所得计税。';
   }else{
-   description='个税比例只计个税；综合税率同时计入个人社保，并用单位公积金抵减。两者分母都只含税前年收入（工资 + 年终奖）。';
-   note=`月薪 ${selected} 万：个税比例 ${pct(r.incomeTaxRate)}%，综合税率 ${pct(r.burdenRate)}%。这不是最高边际税率，也不宜直接用于国际排名。`;
+   description='分母均为税前年收入，不含单位公积金。';
+   note='综合税率 =（个税 + 个人社保 − 单位公积金）÷ 税前年收入，非标准个税税率。';
   }
  }else{
   content+=line(left,y(totalMonths),w-right,y(totalMonths),{stroke:'#9eaea4','stroke-dasharray':'4 4'});
@@ -109,8 +113,8 @@ function drawChart(){
    if(w>600||n===selected)content+=txt(x(n),v>=0?y(v)-8:y(v)+14,wan(a.increase),{'text-anchor':'middle','font-size':w>600?10:11,fill:colors.cash});
   }
   legend=`<span><i style="background:${colors.cash}"></i>税后现金增量</span><span><i style="background:${colors.total}"></i>跨年终奖税率档</span>`;
-  description=`横坐标表示涨薪后的月薪：例如 10 对应从 9 万涨到 10 万。虚线为每次新增税前年薪 ${totalMonths} 万。`;
-  note=r.increase===null?'2 万是起始档，没有上一档；选择 3 万及以上可查看涨薪收益。':`从 ${selected-1} 万涨到 ${selected} 万：税前年收入增加 ${totalMonths} 万，现金实际多拿 ${wan(r.increase)} 万（${yuan(r.increase)} 元）。${r.crossBonus?'这一档跨越年终奖税率分界，增量暂时变小。':''}`;
+  description=`横轴为涨薪后的月薪 · 虚线为税前年增量 ${totalMonths} 万`;
+  note=r.increase===null?'2 万是起始档，没有上一档；选择 3 万及以上可查看涨薪收益。':`从 ${selected-1} 万涨到 ${selected} 万：税前年收入增加 ${totalMonths} 万，现金多拿 ${wan(r.increase)} 万。${r.crossBonus?'这一档跨越年终奖税率分界，增量暂时变小。':''}`;
  }
  $('chart-description').textContent=description;$('legend').innerHTML=legend;$('chart-note').textContent=note;
  container.setAttribute('aria-label',`${description} ${note} 完整数值见下方明细表。`);
@@ -135,25 +139,30 @@ new ResizeObserver(()=>drawChart()).observe($('chart'));
 render();
 
 // 悬停、键盘聚焦及触屏点击均可查看；浮层挂在 body，避免被横滚表格裁切。
-const help=$('burden-help'), tooltip=$('burden-tooltip');
-let helpPinned=false,helpTimer;
+const helpButtons=[...document.querySelectorAll('[data-tax-help]')],tooltip=$('burden-tooltip');
+let help=helpButtons[0],helpPinned=false,helpTimer;
 function positionHelp(){
  const rect=help.getBoundingClientRect(),width=tooltip.offsetWidth,height=tooltip.offsetHeight;
  tooltip.style.left=`${Math.max(12,Math.min(rect.right-width,window.innerWidth-width-12))}px`;
- const below=rect.bottom+10;
- tooltip.style.top=`${Math.max(12,below+height<=window.innerHeight-12?below:rect.top-height-10)}px`;
+ tooltip.style.top=`${Math.max(12,rect.bottom+10+height<=window.innerHeight-12?rect.bottom+10:rect.top-height-10)}px`;
 }
-function showHelp(){clearTimeout(helpTimer);tooltip.hidden=false;help.setAttribute('aria-expanded','true');positionHelp();}
-function hideHelp(){clearTimeout(helpTimer);helpPinned=false;tooltip.hidden=true;help.setAttribute('aria-expanded','false');}
+function showHelp(button=help){clearTimeout(helpTimer);if(help!==button){help.setAttribute('aria-expanded','false');helpPinned=false;}help=button;tooltip.hidden=false;help.setAttribute('aria-expanded','true');positionHelp();}
+function hideHelp(){clearTimeout(helpTimer);helpPinned=false;tooltip.hidden=true;helpButtons.forEach(b=>b.setAttribute('aria-expanded','false'));}
 function leaveHelp(){if(!helpPinned)helpTimer=setTimeout(()=>{if(document.activeElement!==help)hideHelp();},140);}
-help.addEventListener('pointerenter',showHelp);
-help.addEventListener('pointerleave',leaveHelp);
-help.addEventListener('focus',showHelp);
-help.addEventListener('blur',leaveHelp);
-help.addEventListener('click',()=>{if(helpPinned){hideHelp();}else{helpPinned=true;showHelp();}});
+for(const button of helpButtons){
+ button.addEventListener('pointerenter',()=>showHelp(button));
+ button.addEventListener('pointerleave',leaveHelp);
+ button.addEventListener('focus',()=>showHelp(button));
+ button.addEventListener('blur',leaveHelp);
+ button.addEventListener('click',()=>{if(help===button&&helpPinned)hideHelp();else{showHelp(button);helpPinned=true;}});
+}
 tooltip.addEventListener('pointerenter',()=>clearTimeout(helpTimer));
 tooltip.addEventListener('pointerleave',leaveHelp);
-document.addEventListener('pointerdown',event=>{if(!help.contains(event.target)&&!tooltip.contains(event.target))hideHelp();});
-document.addEventListener('keydown',event=>{if(event.key==='Escape')hideHelp();});
+document.addEventListener('pointerdown',e=>{if(!helpButtons.some(b=>b.contains(e.target))&&!tooltip.contains(e.target))hideHelp();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')hideHelp();});
 window.addEventListener('resize',()=>{if(!tooltip.hidden)positionHelp();});
 document.addEventListener('scroll',()=>{if(!tooltip.hidden)positionHelp();},true);
+// 深链接先展开目标折叠区，说明仍然随时可达。
+function revealSection(id){const target=$(id);if(!target)return;let p=target;while(p){if(p.tagName==='DETAILS')p.open=true;p=p.parentElement;}target.scrollIntoView({behavior:'smooth',block:'start'});}
+document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',()=>{const id=a.getAttribute('href').slice(1);revealSection(id);}));
+if(location.hash)revealSection(location.hash.slice(1));
