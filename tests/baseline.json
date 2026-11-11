@@ -1,0 +1,176 @@
+{
+  "social_month": 2689.16,
+  "fund_month": 5058.0,
+  "rows": [
+    {
+      "month": 40000.0,
+      "gross": 640000.0,
+      "social": 32269.92,
+      "fund_personal": 60696.0,
+      "tax_wage": 49838.52,
+      "tax_bonus": 30590.0,
+      "cash": 466605.56,
+      "cash_fund": 587997.56
+    },
+    {
+      "month": 50000.0,
+      "gross": 800000.0,
+      "social": 32269.92,
+      "fund_personal": 60696.0,
+      "tax_wage": 81190.22,
+      "tax_bonus": 38590.0,
+      "cash": 587253.86,
+      "cash_fund": 708645.86
+    },
+    {
+      "month": 60000.0,
+      "gross": 960000.0,
+      "social": 32269.92,
+      "fund_personal": 60696.0,
+      "tax_wage": 117190.22,
+      "tax_bonus": 46590.0,
+      "cash": 703253.86,
+      "cash_fund": 824645.86
+    },
+    {
+      "month": 70000.0,
+      "gross": 1120000.0,
+      "social": 32269.92,
+      "fund_personal": 60696.0,
+      "tax_wage": 154541.93,
+      "tax_bonus": 54590.0,
+      "cash": 817902.15,
+      "cash_fund": 939294.15
+    },
+    {
+      "month": 80000.0,
+      "gross": 1280000.0,
+      "social": 32269.92,
+      "fund_personal": 60696.0,
+      "tax_wage": 196541.93,
+      "tax_bonus": 77340.0,
+      "cash": 913152.15,
+      "cash_fund": 1034544.15
+    },
+    {
+      "month": 90000.0,
+      "gross": 1440000.0,
+      "social": 32269.92,
+      "fund_personal": 60696.0,
+      "tax_wage": 238541.93,
+      "tax_bonus": 87340.0,
+      "cash": 1021152.15,
+      "cash_fund": 1142544.15
+    },
+    {
+      "month": 100000.0,
+      "gross": 1600000.0,
+      "social": 32269.92,
+      "fund_personal": 60696.0,
+      "tax_wage": 289245.34,
+      "tax_bonus": 97340.0,
+      "cash": 1120448.74,
+      "cash_fund": 1241840.74
+    },
+    {
+      "month": 110000.0,
+      "gross": 1760000.0,
+      "social": 32269.92,
+      "fund_personal": 60696.0,
+      "tax_wage": 343245.34,
+      "tax_bonus": 127590.0,
+      "cash": 1196198.74,
+      "cash_fund": 1317590.74
+    },
+    {
+      "month": 120000.0,
+      "gross": 1920000.0,
+      "social": 32269.92,
+      "fund_personal": 60696.0,
+      "tax_wage": 397245.34,
+      "tax_bonus": 139590.0,
+      "cash": 1290198.74,
+      "cash_fund": 1411590.74
+    },
+    {
+      "month": 130000.0,
+      "gross": 2080000.0,
+      "social": 32269.92,
+      "fund_personal": 60696.0,
+      "tax_wage": 451245.34,
+      "tax_bonus": 151590.0,
+      "cash": 1384198.74,
+      "cash_fund": 1505590.74
+    },
+    {
+      "month": 140000.0,
+      "gross": 2240000.0,
+      "social": 32269.92,
+      "fund_personal": 60696.0,
+      "tax_wage": 505245.34,
+      "tax_bonus": 163590.0,
+      "cash": 1478198.74,
+      "cash_fund": 1599590.74
+    },
+    {
+      "month": 150000.0,
+      "gross": 2400000.0,
+      "social": 32269.92,
+      "fund_personal": 60696.0,
+      "tax_wage": 559245.34,
+      "tax_bonus": 175590.0,
+      "cash": 1572198.74,
+      "cash_fund": 1693590.74
+    },
+    {
+      "month": 160000.0,
+      "gross": 2560000.0,
+      "social": 32269.92,
+      "fund_personal": 60696.0,
+      "tax_wage": 613245.34,
+      "tax_bonus": 187590.0,
+      "cash": 1666198.74,
+      "cash_fund": 1787590.74
+    },
+    {
+      "month": 170000.0,
+      "gross": 2720000.0,
+      "social": 32269.92,
+      "fund_personal": 60696.0,
+      "tax_wage": 667245.34,
+      "tax_bonus": 230840.0,
+      "cash": 1728948.74,
+      "cash_fund": 1850340.74
+    },
+    {
+      "month": 180000.0,
+      "gross": 2880000.0,
+      "social": 32269.92,
+      "fund_personal": 60696.0,
+      "tax_wage": 721245.34,
+      "tax_bonus": 244840.0,
+      "cash": 1820948.74,
+      "cash_fund": 1942340.74
+    },
+    {
+      "month": 190000.0,
+      "gross": 3040000.0,
+      "social": 32269.92,
+      "fund_personal": 60696.0,
+      "tax_wage": 775245.34,
+      "tax_bonus": 258840.0,
+      "cash": 1912948.74,
+      "cash_fund": 2034340.74
+    },
+    {
+      "month": 200000.0,
+      "gross": 3200000.0,
+      "social": 32269.92,
+      "fund_personal": 60696.0,
+      "tax_wage": 829245.34,
+      "tax_bonus": 272840.0,
+      "cash": 2004948.74,
+      "cash_fund": 2126340.74
+    }
+  ]
+}
