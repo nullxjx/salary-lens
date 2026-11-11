@@ -46,8 +46,8 @@ function render(){
  $('money-bar').setAttribute('aria-label',parts.map(([l,v])=>`${l} ${yuan(v)} 元`).join('；'));
  $('breakdown-list').innerHTML=parts.map(([label,value,color])=>`<div><dt><i style="background:${color}"></i>${label}</dt><dd>${wan(value)} 万</dd></div>`).join('');
  $('extra-fund').textContent=`另有单位公积金 ${wan(r.employerFund)} 万，不包含在税前 16 薪中；双边公积金都算入「含公积金到手」。`;
- $('tax-detail-content').innerHTML=`<p><b>工资应纳税所得额</b><br>max(0, ${yuan(r.wages)} − ${yuan(r.social)} − ${yuan(r.personalFund)} − 60,000 − ${yuan(config.deduction*12)}) = ${yuan(r.wageTax.taxable)} 元</p><p><b>工资个税</b><br>${yuan(r.wageTax.taxable)} × ${pct(r.wageTax.rate)}% − ${yuan(r.wageTax.quick)} = ${yuan(r.wageTax.tax)} 元</p><p><b>年终奖单独计税</b><br>奖金 ${yuan(r.bonus)} ÷ 12 = ${yuan(r.bonus/12)} 元，用此数查月度税率表。<br>奖金税 = ${yuan(r.bonus)} × ${pct(r.bonusTax.rate)}% − ${yuan(r.bonusTax.quick)} = ${yuan(r.bonusTax.tax)} 元（速算扣除数只减一次）</p><p><b>现金到手</b><br>${yuan(r.gross)} − ${yuan(r.social)} − ${yuan(r.personalFund)} − ${yuan(r.tax)} = ${yuan(r.cash)} 元</p><p><b>自定义综合负担率</b><br>1 − ${yuan(r.total)} ÷ ${yuan(r.gross)} = ${pct(r.burdenRate)}%</p>`;
- $('table-body').innerHTML=rows.map(a=>`<tr data-month="${a.monthly/10000}" class="${a.monthly/10000===selected?'selected':''}"><td><button type="button" aria-label="查看月薪 ${a.monthly/10000} 万元" aria-pressed="${a.monthly/10000===selected}">${a.monthly/10000} 万</button></td><td>${wan(a.gross)}</td><td><b>${wan(a.cash)}</b></td><td>${wan(a.total)}</td><td>${pct(a.incomeTaxRate)}%</td><td>${pct(a.burdenRate)}%</td><td class="${a.crossBonus?'cross-value':''}">${a.increase===null?'—':`${wan(a.increase)}${a.crossBonus?' *':''}`}</td></tr>`).join('');
+ $('tax-detail-content').innerHTML=`<p><b>工资应纳税所得额</b><br>max(0, ${yuan(r.wages)} − ${yuan(r.social)} − ${yuan(r.personalFund)} − 60,000 − ${yuan(config.deduction*12)}) = ${yuan(r.wageTax.taxable)} 元</p><p><b>工资个税</b><br>${yuan(r.wageTax.taxable)} × ${pct(r.wageTax.rate)}% − ${yuan(r.wageTax.quick)} = ${yuan(r.wageTax.tax)} 元</p><p><b>年终奖单独计税</b><br>奖金 ${yuan(r.bonus)} ÷ 12 = ${yuan(r.bonus/12)} 元，用此数查月度税率表。<br>奖金税 = ${yuan(r.bonus)} × ${pct(r.bonusTax.rate)}% − ${yuan(r.bonusTax.quick)} = ${yuan(r.bonusTax.tax)} 元（速算扣除数只减一次）</p><p><b>现金到手</b><br>${yuan(r.gross)} − ${yuan(r.social)} − ${yuan(r.personalFund)} − ${yuan(r.tax)} = ${yuan(r.cash)} 元</p><p><b>综合税率</b><br>1 − ${yuan(r.total)} ÷ ${yuan(r.gross)} = ${pct(r.burdenRate)}%</p>`;
+ $('table-body').innerHTML=rows.map(a=>`<tr data-month="${a.monthly/10000}" class="${a.monthly/10000===selected?'selected':''}"><td><button type="button" aria-label="查看月薪 ${a.monthly/10000} 万元" aria-pressed="${a.monthly/10000===selected}">${a.monthly/10000} 万</button></td><td>${wan(a.gross)}</td><td><b>${wan(a.cash)}</b></td><td>${wan(a.total)}</td><td>${wan(a.tax)}</td><td>${wan(a.social)}</td><td>${pct(a.incomeTaxRate)}%</td><td>${pct(a.burdenRate)}%</td><td class="${a.crossBonus?'cross-value':''}">${a.increase===null?'—':`${wan(a.increase)}${a.crossBonus?' *':''}`}</td></tr>`).join('');
  drawChart();
 }
 function drawChart(){
@@ -72,7 +72,7 @@ function drawChart(){
   const ms=new Set(Array.from({length:321},(_,i)=>40000+i*500));
   for(const t of [75000,105000,165000]){ms.add(t);ms.add(t+.01);}
   const dense=[...ms].sort((a,b)=>a-b).map(m=>calculate(m,config));
-  const plots=mode==='income'?[['cash',colors.cash,'现金到手'],['total',colors.total,'含双边公积金']]:[['incomeTaxRate',colors.tax,'仅个税比例'],['burdenRate',colors.cash,'自定义综合负担率']];
+  const plots=mode==='income'?[['cash',colors.cash,'现金到手'],['total',colors.total,'含双边公积金']]:[['incomeTaxRate',colors.tax,'仅个税比例'],['burdenRate',colors.cash,'综合税率']];
   for(const [key,color,label] of plots){
    const get=a=>mode==='income'?a[key]/10000:a[key]*100;
    const d=dense.map((a,i)=>`${i?'L':'M'}${x(a.monthly/10000).toFixed(2)},${y(get(a)).toFixed(2)}`).join(' ');
@@ -84,8 +84,8 @@ function drawChart(){
    description='税前月薪 4–20 万，每档增加 1 万。曲线保留年终奖换档时的真实跳变。';
    note=`月薪 ${selected} 万：现金 ${wan(r.cash)} 万，含公积金 ${wan(r.total)} 万。公积金是账户积累，不等同于随时可支取的现金。`;
   }else{
-   description='个税比例只计个税；综合负担率同时计入个人社保，并用单位公积金抵减。两者分母都只含税前 16 薪。';
-   note=`月薪 ${selected} 万：个税比例 ${pct(r.incomeTaxRate)}%，自定义综合负担率 ${pct(r.burdenRate)}%。这不是最高边际税率，也不宜直接用于国际排名。`;
+   description='个税比例只计个税；综合税率同时计入个人社保，并用单位公积金抵减。两者分母都只含税前 16 薪。';
+   note=`月薪 ${selected} 万：个税比例 ${pct(r.incomeTaxRate)}%，综合税率 ${pct(r.burdenRate)}%。这不是最高边际税率，也不宜直接用于国际排名。`;
   }
  }else{
   content+=line(left,y(16),w-right,y(16),{stroke:'#9eaea4','stroke-dasharray':'4 4'});
@@ -113,10 +113,34 @@ document.querySelectorAll('[data-chart]').forEach(b=>b.addEventListener('click',
 $('table-body').addEventListener('click',e=>{const tr=e.target.closest('tr[data-month]');if(tr){const fromButton=!!e.target.closest('button');const n=Number(tr.dataset.month);choose(n);if(fromButton)$('table-body').querySelector(`tr[data-month="${n}"] button`).focus({preventScroll:true});}});
 $('chart').addEventListener('click',e=>{const mark=e.target.closest('[data-month]');if(mark)choose(Number(mark.dataset.month));});
 $('download').addEventListener('click',()=>{
- const data=[[`${CITIES[config.city].name} 16 薪测算；金额单位：人民币元；参数快照日期：2026-11-11`],['说明',CITIES[config.city].note],...insurance.map(([k,n])=>[n+'上限',config[k+'Cap'],'个人比例',config[k+'Rate']+'%']),['医疗固定额',config.medicalFixed,'公积金基数上限',config.fundCap,'双边各基础比例',config.fundRate+'%','双边各补充比例',config.supplementRate+'%','月专项附加扣除',config.deduction],['税前月薪','税前年薪','现金到手','含双边公积金','全年工资个税','全年奖金个税','全年个人社保','全年个人公积金','全年单位公积金','个税比例','综合负担率','较上一档现金增量'],...rows.map(r=>[r.monthly,r.gross,r.cash,r.total,r.wageTax.tax,r.bonusTax.tax,r.social,r.personalFund,r.employerFund,pct(r.incomeTaxRate)+'%',pct(r.burdenRate)+'%',r.increase??''])];
+ const data=[[`${CITIES[config.city].name} 16 薪测算；金额单位：人民币元；参数快照日期：2026-11-11`],['说明',CITIES[config.city].note],...insurance.map(([k,n])=>[n+'上限',config[k+'Cap'],'个人比例',config[k+'Rate']+'%']),['医疗固定额',config.medicalFixed,'公积金基数上限',config.fundCap,'双边各基础比例',config.fundRate+'%','双边各补充比例',config.supplementRate+'%','月专项附加扣除',config.deduction],['税前月薪','税前年薪','现金到手','含双边公积金','全年个税','全年工资个税','全年奖金个税','全年个人社保','全年个人公积金','全年单位公积金','个税比例','综合税率','较上一档现金增量'],...rows.map(r=>[r.monthly,r.gross,r.cash,r.total,r.tax,r.wageTax.tax,r.bonusTax.tax,r.social,r.personalFund,r.employerFund,pct(r.incomeTaxRate)+'%',pct(r.burdenRate)+'%',r.increase??''])];
  const csv='\uFEFF'+data.map(row=>row.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');
  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));const a=document.createElement('a');a.href=url;a.download=`${CITIES[config.city].name}16薪税后收入测算.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
 populate();
 new ResizeObserver(()=>drawChart()).observe($('chart'));
 render();
+
+// 悬停、键盘聚焦及触屏点击均可查看；浮层挂在 body，避免被横滚表格裁切。
+const help=$('burden-help'), tooltip=$('burden-tooltip');
+let helpPinned=false,helpTimer;
+function positionHelp(){
+ const rect=help.getBoundingClientRect(),width=tooltip.offsetWidth,height=tooltip.offsetHeight;
+ tooltip.style.left=`${Math.max(12,Math.min(rect.right-width,window.innerWidth-width-12))}px`;
+ const below=rect.bottom+10;
+ tooltip.style.top=`${Math.max(12,below+height<=window.innerHeight-12?below:rect.top-height-10)}px`;
+}
+function showHelp(){clearTimeout(helpTimer);tooltip.hidden=false;help.setAttribute('aria-expanded','true');positionHelp();}
+function hideHelp(){clearTimeout(helpTimer);helpPinned=false;tooltip.hidden=true;help.setAttribute('aria-expanded','false');}
+function leaveHelp(){if(!helpPinned)helpTimer=setTimeout(()=>{if(document.activeElement!==help)hideHelp();},140);}
+help.addEventListener('pointerenter',showHelp);
+help.addEventListener('pointerleave',leaveHelp);
+help.addEventListener('focus',showHelp);
+help.addEventListener('blur',leaveHelp);
+help.addEventListener('click',()=>{if(helpPinned){hideHelp();}else{helpPinned=true;showHelp();}});
+tooltip.addEventListener('pointerenter',()=>clearTimeout(helpTimer));
+tooltip.addEventListener('pointerleave',leaveHelp);
+document.addEventListener('pointerdown',event=>{if(!help.contains(event.target)&&!tooltip.contains(event.target))hideHelp();});
+document.addEventListener('keydown',event=>{if(event.key==='Escape')hideHelp();});
+window.addEventListener('resize',()=>{if(!tooltip.hidden)positionHelp();});
+document.addEventListener('scroll',()=>{if(!tooltip.hidden)positionHelp();},true);
