@@ -32,6 +32,6 @@ test('调整比例、附加扣除、基数后响应',()=>{
  assert.equal(calculate(50000,{fundCap:100000}).fundMonthly,8000);
 });
 test('无效输入拒绝而非 NaN 静默流入',()=>{
- for(const value of [0,19999,200001,NaN,Infinity])assert.throws(()=>calculate(value));
+ for(const value of [0,9999,200001,NaN,Infinity])assert.throws(()=>calculate(value));
  for(const c of [{fundRate:13},{deduction:-1},{socialCap:NaN},{fundCap:0}])assert.throws(()=>calculate(40000,c));
 });

@@ -1,5 +1,6 @@
-import {DEFAULTS,calculate,series,bonusBreakpoints} from './calc.js?v=20261111-4';
-import {CITIES,cityConfig} from './cities.js?v=20261111-4';
+import {initSelects,refreshSelects} from './select.js?v=20261111-5';
+import {DEFAULTS,calculate,series,bonusBreakpoints} from './calc.js?v=20261111-5';
+import {CITIES,cityConfig} from './cities.js?v=20261111-5';
 const $=id=>document.getElementById(id);
 const wan=n=>(n/10000).toFixed(2), pct=n=>(n*100).toFixed(2), yuan=n=>n.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});
 let config={...DEFAULTS}, selected=10, mode='income', rows=series(config);
@@ -20,6 +21,7 @@ function populate(){
  for(const [id,key] of Object.entries(formMap)){$(id).value=config[key];$(id).removeAttribute('aria-invalid');}
  $('medical-tier').value=String(config.medicalRate);
  $('error').hidden=true;$('download').disabled=false;
+ refreshSelects();
 }
 function readConfig(){
  const c={...config};
@@ -29,7 +31,7 @@ function readConfig(){
 }
 function choose(n){selected=n;$('salary').value=n;render();}
 function render(){
- const r=rows[selected-2];
+ const r=rows[selected-1];
  const city=CITIES[config.city];
  const totalMonths=Number((config.wageMonths+config.bonusMonths).toFixed(1));
  $('pay-summary').textContent=`工资 ${config.wageMonths} + 年终奖 ${config.bonusMonths}`;
@@ -64,12 +66,13 @@ function render(){
  $('extra-fund').textContent=`另有单位公积金 ${wan(r.employerFund)} 万，不包含在税前年收入中；双边公积金都算入「含公积金到手」。`;
  $('tax-detail-content').innerHTML=`<p><b>薪酬结构</b><br>工资：${yuan(r.monthly)} × ${config.wageMonths} = ${yuan(r.wages)} 元；年终奖：${yuan(r.monthly)} × ${config.bonusMonths} = ${yuan(r.bonus)} 元。<br>社保、公积金与专项附加扣除按 12 个月计算，奖金查档仍除以 12。</p><p><b>工资应纳税所得额</b><br>max(0, ${yuan(r.wages)} − ${yuan(r.social)} − ${yuan(r.personalFund)} − 60,000 − ${yuan(config.deduction*12)}) = ${yuan(r.wageTax.taxable)} 元</p><p><b>工资个税</b><br>${yuan(r.wageTax.taxable)} × ${pct(r.wageTax.rate)}% − ${yuan(r.wageTax.quick)} = ${yuan(r.wageTax.tax)} 元</p><p><b>年终奖单独计税</b><br>奖金 ${yuan(r.bonus)} ÷ 12 = ${yuan(r.bonus/12)} 元，用此数查月度税率表。<br>奖金税 = ${yuan(r.bonus)} × ${pct(r.bonusTax.rate)}% − ${yuan(r.bonusTax.quick)} = ${yuan(r.bonusTax.tax)} 元（速算扣除数只减一次）</p><p><b>现金到手</b><br>${yuan(r.gross)} − ${yuan(r.social)} − ${yuan(r.personalFund)} − ${yuan(r.tax)} = ${yuan(r.cash)} 元</p><p><b>综合税率</b><br>1 − ${yuan(r.total)} ÷ ${yuan(r.gross)} = ${pct(r.burdenRate)}%</p>`;
  $('table-body').innerHTML=rows.map(a=>`<tr data-month="${a.monthly/10000}" class="${a.monthly/10000===selected?'selected':''}"><td><button type="button" aria-label="查看月薪 ${a.monthly/10000} 万元" aria-pressed="${a.monthly/10000===selected}">${a.monthly/10000} 万</button></td><td>${wan(a.gross)}</td><td><b>${wan(a.cash)}</b></td><td>${wan(a.total)}</td><td>${wan(a.tax)}</td><td>${wan(a.social)}</td><td>${pct(a.incomeTaxRate)}%</td><td>${pct(a.burdenRate)}%</td><td class="${a.crossBonus?'cross-value':''}">${a.increase===null?'—':`${wan(a.increase)}${a.crossBonus?' *':''}`}</td></tr>`).join('');
+ refreshSelects();
  drawChart();
 }
 function drawChart(){
  const container=$('chart'),w=Math.max(240,container.clientWidth),h=w<420?240:250;
  const left=47,right=17,top=23,bottom=40,pw=w-left-right,ph=h-top-bottom;
- const x=n=>left+(n-2)/18*pw;
+ const x=n=>left+(n-1)/19*pw;
  const totalMonths=Number((config.wageMonths+config.bonusMonths).toFixed(1));
  let minimum=0,maximum=1,step=1;
  if(mode==='income'){maximum=Math.ceil(Math.max(...rows.map(r=>r.total))/10000/40)*40;step=40;}
@@ -78,15 +81,15 @@ function drawChart(){
  const y=v=>top+(maximum-v)/(maximum-minimum)*ph;
  let content='';
  for(let v=minimum;v<=maximum;v+=step){content+=line(left,y(v),w-right,y(v));content+=txt(left-10,y(v)+4,mode==='burden'?`${v}%`:v,{'text-anchor':'end'});}
- const ticks=w<420?[2,6,10,14,18,20]:w<600?[2,4,6,8,10,12,14,16,18,20]:rows.map(r=>r.monthly/10000);
+ const ticks=w<420?[1,5,10,15,20]:w<600?[1,4,6,8,10,12,14,16,18,20]:rows.map(r=>r.monthly/10000);
  for(const n of ticks) content+=txt(x(n),h-19,n,{'text-anchor':'middle'});
  content+=txt(w-right,h-1,'税前月薪 · 万元 / 月',{'text-anchor':'end','font-size':10});
  content+=txt(left,12,mode==='income'?'年收入 · 万元':mode==='burden'?'占税前年收入比例':'现金年增量 · 万元',{'font-size':10});
  content+=line(x(selected),top,x(selected),h-bottom,{stroke:'#9eaea4','stroke-dasharray':'3 4'});
  let description,legend,note;
- const r=rows[selected-2];
+ const r=rows[selected-1];
  if(mode==='income'||mode==='burden'){
-  const ms=new Set(Array.from({length:361},(_,i)=>20000+i*500));
+  const ms=new Set(Array.from({length:381},(_,i)=>10000+i*500));
   for(const t of bonusBreakpoints(config)){ms.add(t);const next=t+.011/config.bonusMonths;if(next<=200000)ms.add(next);}
   const dense=[...ms].sort((a,b)=>a-b).map(m=>calculate(m,config));
   const plots=mode==='income'?[['cash',colors.cash,'现金到手'],['total',colors.total,'含双边公积金']]:[['incomeTaxRate',colors.tax,'仅个税比例'],['burdenRate',colors.cash,'综合税率']];
@@ -98,7 +101,7 @@ function drawChart(){
   }
   legend=plots.map(([,c,l])=>`<span><i style="background:${c}"></i>${l}</span>`).join('');
   if(mode==='income'){
-   description='月薪 2–20 万 · 点击图中节点切换档位';
+   description='月薪 1–20 万 · 点击图中节点切换档位';
    note=config.bonusMonths>0?'年终奖换档可能带来短暂回落，并非计算异常。':'当前不发年终奖，全部工资按综合所得计税。';
   }else{
    description='分母均为税前年收入，不含单位公积金。';
@@ -114,7 +117,7 @@ function drawChart(){
   }
   legend=`<span><i style="background:${colors.cash}"></i>税后现金增量</span><span><i style="background:${colors.total}"></i>跨年终奖税率档</span>`;
   description=`横轴为涨薪后的月薪 · 虚线为税前年增量 ${totalMonths} 万`;
-  note=r.increase===null?'2 万是起始档，没有上一档；选择 3 万及以上可查看涨薪收益。':`从 ${selected-1} 万涨到 ${selected} 万：税前年收入增加 ${totalMonths} 万，现金多拿 ${wan(r.increase)} 万。${r.crossBonus?'这一档跨越年终奖税率分界，增量暂时变小。':''}`;
+  note=r.increase===null?'1 万是起始档，没有上一档；选择 2 万及以上可查看涨薪收益。':`从 ${selected-1} 万涨到 ${selected} 万：税前年收入增加 ${totalMonths} 万，现金多拿 ${wan(r.increase)} 万。${r.crossBonus?'这一档跨越年终奖税率分界，增量暂时变小。':''}`;
  }
  $('chart-description').textContent=description;$('legend').innerHTML=legend;$('chart-note').textContent=note;
  container.setAttribute('aria-label',`${description} ${note} 完整数值见下方明细表。`);
@@ -124,7 +127,7 @@ $('salary').addEventListener('input',()=>choose(Number($('salary').value)));
 for(const id of formIds) $(id).addEventListener('input',()=>{const c=readConfig();if(c){config=c;rows=series(config);render();}});
 $('city').addEventListener('change',()=>{config={...cityConfig($('city').value),deduction:config.deduction,wageMonths:config.wageMonths,bonusMonths:config.bonusMonths};populate();rows=series(config);render();});
 $('medical-tier').addEventListener('change',()=>{$('medical-rate').value=$('medical-tier').value;const c=readConfig();if(c){config=c;rows=series(config);render();}});
-$('medical-rate').addEventListener('input',()=>{$('medical-tier').value=$('medical-rate').value;});
+$('medical-rate').addEventListener('input',()=>{$('medical-tier').value=$('medical-rate').value;refreshSelects();});
 $('reset').addEventListener('click',()=>{config=cityConfig(config.city);selected=10;mode='income';$('salary').value=10;populate();rows=series(config);document.querySelectorAll('[data-chart]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.chart===mode)));render();});
 document.querySelectorAll('[data-chart]').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.chart;document.querySelectorAll('[data-chart]').forEach(t=>t.setAttribute('aria-pressed',String(t===b)));drawChart();}));
 $('table-body').addEventListener('click',e=>{const tr=e.target.closest('tr[data-month]');if(tr){const fromButton=!!e.target.closest('button');const n=Number(tr.dataset.month);choose(n);if(fromButton)$('table-body').querySelector(`tr[data-month="${n}"] button`).focus({preventScroll:true});}});
@@ -134,6 +137,7 @@ $('download').addEventListener('click',()=>{
  const csv='\uFEFF'+data.map(row=>row.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');
  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));const a=document.createElement('a');a.href=url;a.download=`${CITIES[config.city].name}${config.wageMonths}+${config.bonusMonths}薪税后收入测算.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
+initSelects();
 populate();
 new ResizeObserver(()=>drawChart()).observe($('chart'));
 render();

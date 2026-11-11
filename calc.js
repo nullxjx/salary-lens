@@ -19,7 +19,7 @@ export function calculate(monthly, config=DEFAULTS) {
   const c={...cityConfig(config.city || 'hangzhou'),...config};
   // 兼容旧版统一社保上限参数；新界面按险种分别输入。
   if(Object.hasOwn(config,'socialCap'))for(const k of ['pensionCap','medicalCap','unemploymentCap'])c[k]=config.socialCap;
-  if (!Number.isFinite(monthly) || monthly<20000 || monthly>200000) throw new RangeError('本模型月薪范围为 2 万至 20 万元');
+  if (!Number.isFinite(monthly) || monthly<10000 || monthly>200000) throw new RangeError('本模型月薪范围为 1 万至 20 万元');
   for(const k of ['pensionCap','medicalCap','unemploymentCap','fundCap']) if(!Number.isFinite(c[k]) || c[k]<1000 || c[k]>100000) throw new RangeError('缴费上限须在 1,000 至 100,000 元之间');
   if(!Number.isFinite(c.fundRate)||c.fundRate<5||c.fundRate>12) throw new RangeError('公积金比例须为 5% 至 12%');
   for(const k of ['pensionRate','medicalRate','unemploymentRate'])if(!Number.isFinite(c[k])||c[k]<0||c[k]>20)throw new RangeError('个人社保比例须为 0% 至 20%');
@@ -46,12 +46,12 @@ export function calculate(monthly, config=DEFAULTS) {
     incomeTaxRate:tax/gross, burdenRate:1-total/gross, personalBurdenRate:(tax+social)/gross};
 }
 export function series(config=DEFAULTS) {
-  return Array.from({length:19},(_,i)=>calculate((i+2)*10000,config)).map((r,i,all)=>({...r,increase:i?cents(r.cash-all[i-1].cash):null,crossBonus:i? r.bonusTax.rate!==all[i-1].bonusTax.rate:false}));
+  return Array.from({length:20},(_,i)=>calculate((i+1)*10000,config)).map((r,i,all)=>({...r,increase:i?cents(r.cash-all[i-1].cash):null,crossBonus:i? r.bonusTax.rate!==all[i-1].bonusTax.rate:false}));
 }
 
 // 奖金按整笔年奖÷12查档；税档位置随奖金月数移动，而非固定月薪点。
 export function bonusBreakpoints(config=DEFAULTS){
  const months=config.bonusMonths??DEFAULTS.bonusMonths;
  if(months<=0)return [];
- return BANDS.slice(0,-1).map(([limit])=>limit/months).filter(m=>m>=20000&&m<=200000);
+ return BANDS.slice(0,-1).map(([limit])=>limit/months).filter(m=>m>=10000&&m<=200000);
 }
